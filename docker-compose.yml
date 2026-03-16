@@ -1,0 +1,59 @@
+services:
+  leona-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - storage_data:/app/storage
+    environment:
+      - API_KEY=${API_KEY:-change-me-in-production}
+      - WEBHOOK_URL=${WEBHOOK_URL:-}
+      - POSTGRES_URL=${POSTGRES_URL:-postgres://leona:leonapass@postgres:5432/leona?sslmode=disable}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - SQLITE_PATH=/app/storage
+      - MODE=single
+      - MAX_INSTANCES=${MAX_INSTANCES:-50}
+      - BRIGHTDATA_CUSTOMER_ID=${BRIGHTDATA_CUSTOMER_ID:-}
+      - BRIGHTDATA_ZONE=${BRIGHTDATA_ZONE:-isp}
+      - BRIGHTDATA_PASSWORD=${BRIGHTDATA_PASSWORD:-}
+      - IPROYAL_USERNAME=${IPROYAL_USERNAME:-}
+      - IPROYAL_PASSWORD=${IPROYAL_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=leona
+      - POSTGRES_USER=leona
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-leonapass}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U leona"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  storage_data:

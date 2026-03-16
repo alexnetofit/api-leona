@@ -1,0 +1,44 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "body_limit_mb": 50
+  },
+  "database": {
+    "sqlite_path": "./storage",
+    "postgres_url": "postgres://leona:leonapass@localhost:5432/leona?sslmode=disable"
+  },
+  "redis": {
+    "url": "redis://localhost:6379"
+  },
+  "proxy": {
+    "primary_provider": "brightdata",
+    "brightdata": {
+      "customer_id": "",
+      "zone": "isp",
+      "password": "",
+      "endpoint": "brd.superproxy.io:22225"
+    },
+    "iproyal": {
+      "username": "",
+      "password": "",
+      "endpoint": "geo.iproyal.com:12321"
+    },
+    "health_check_interval_seconds": 60,
+    "media_through_proxy": false
+  },
+  "webhook": {
+    "global_url": "",
+    "headers": {},
+    "timeout_seconds": 10,
+    "max_retries": 3
+  },
+  "auth": {
+    "api_key": "change-me-in-production"
+  },
+  "reconnection": {
+    "max_retries": 3,
+    "base_delay_seconds": 5,
+    "max_delay_seconds": 60
+  }
+}

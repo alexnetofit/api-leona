@@ -1,0 +1,9 @@
+*.db
+storage/
+config.json
+.env
+*.exe
+*.test
+*.out
+vendor/
+.DS_Store
