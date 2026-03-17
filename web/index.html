@@ -446,9 +446,17 @@ async function createInstance() {
 async function connectInstance(id) {
   try {
     const data = await api('POST', `/api/instance/${id}/connect`);
-    toast('Conectando...', 'success');
-    if (data.qr_code) { showQRImage(data.qr_code); openModal('qrModal'); }
-    else { showQR(id); }
+    toast('Conectando... aguarde o QR Code', 'success');
+    openModal('qrModal');
+    document.getElementById('qrContainer').innerHTML = '<div class="spinner border-brand-500"></div>';
+    document.getElementById('qrStatus').textContent = 'Gerando QR Code... aguarde';
+    if (data.qr_code) {
+      showQRImage(data.qr_code);
+      document.getElementById('qrStatus').textContent = 'Escaneie com seu WhatsApp';
+    }
+    // Start polling for QR regardless
+    stopQRPolling();
+    qrInterval = setInterval(() => fetchQR(id), 3000);
   } catch (e) { toast(e.message, 'error'); }
 }
 
@@ -489,22 +497,32 @@ async function showQR(id) {
 
 async function fetchQR(id) {
   try {
-    const data = await api('GET', `/api/instance/${id}/qrcode`);
-    if (data.qr_code) {
-      showQRImage(data.qr_code);
-      document.getElementById('qrStatus').textContent = 'Escaneie com seu WhatsApp';
-    } else {
-      // Check if connected
-      const info = await api('GET', `/api/instance/${id}/info`);
-      if (info.connected) {
-        stopQRPolling();
-        document.getElementById('qrContainer').innerHTML = '<div class="text-brand-500"><svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>';
-        document.getElementById('qrStatus').textContent = 'Conectado com sucesso!';
-        setTimeout(() => { closeModal('qrModal'); loadInstances(); }, 2000);
+    const r = await fetch(BASE_URL + `/api/instance/${id}/qrcode`, {
+      headers: { 'Authorization': 'Bearer ' + API_KEY }
+    });
+    if (r.ok) {
+      const data = await r.json();
+      if (data.qr_code) {
+        showQRImage(data.qr_code);
+        document.getElementById('qrStatus').textContent = 'Escaneie com seu WhatsApp';
       }
+    } else {
+      // QR not ready yet - check if maybe already connected
+      try {
+        const info = await api('GET', `/api/instance/${id}/info`);
+        if (info.connected) {
+          stopQRPolling();
+          document.getElementById('qrContainer').innerHTML = '<div class="text-brand-500"><svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>';
+          document.getElementById('qrStatus').textContent = 'Conectado com sucesso!';
+          setTimeout(() => { closeModal('qrModal'); loadInstances(); }, 2000);
+          return;
+        }
+      } catch {}
+      // Still waiting for QR
+      document.getElementById('qrStatus').textContent = 'Gerando QR Code... aguarde';
     }
   } catch (e) {
-    document.getElementById('qrStatus').textContent = 'Conecte primeiro a instancia';
+    document.getElementById('qrStatus').textContent = 'Aguardando QR Code...';
   }
 }
 
