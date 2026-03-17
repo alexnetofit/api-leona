@@ -24,7 +24,7 @@ RUN CGO_ENABLED=1 GOOS=linux go build -v -o leona-api ./cmd/server
 # ============================================
 FROM alpine:3.20
 
-RUN apk add --no-cache ca-certificates sqlite-libs tzdata
+RUN apk add --no-cache ca-certificates sqlite-libs tzdata wget curl
 
 ENV TZ=America/Sao_Paulo
 
