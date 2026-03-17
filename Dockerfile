@@ -32,6 +32,7 @@ WORKDIR /app
 COPY --from=builder /build/leona-api .
 COPY --from=builder /build/migrations ./migrations
 COPY --from=builder /build/config.example.json ./config.json
+COPY --from=builder /build/web ./web
 
 # Storage para SQLite sessions (montar como volume persistente no EasyPanel)
 RUN mkdir -p /app/storage

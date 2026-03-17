@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leona API - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#f0fdf4',100:'#dcfce7',200:'#bbf7d0',300:'#86efac',400:'#4ade80',500:'#22c55e',600:'#16a34a',700:'#15803d',800:'#166534',900:'#14532d' },
+            dark: { 700:'#1e293b',800:'#0f172a',900:'#020617' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .fade-in { animation: fadeIn .3s ease-in; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+    .spinner { border:3px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; width:20px; height:20px; animation:spin .6s linear infinite; display:inline-block; }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    ::-webkit-scrollbar{width:6px} ::-webkit-scrollbar-track{background:#1e293b} ::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+  </style>
+</head>
+<body class="bg-dark-900 text-gray-100 min-h-screen">
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="min-h-screen flex items-center justify-center">
+    <div class="bg-dark-700 rounded-2xl p-8 w-full max-w-md shadow-2xl fade-in">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold">Leona API</h1>
+        <p class="text-gray-400 mt-1">WhatsApp Management Dashboard</p>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">API Key</label>
+          <input id="apiKeyInput" type="password" placeholder="Sua API Key" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none transition">
+        </div>
+        <button onclick="doLogin()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-lg transition">
+          Entrar
+        </button>
+        <p id="loginError" class="text-red-400 text-sm text-center hidden">API Key invalida</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN DASHBOARD -->
+  <div id="dashboard" class="hidden">
+    <!-- SIDEBAR -->
+    <div class="fixed left-0 top-0 h-full w-64 bg-dark-700 border-r border-gray-700 z-50 flex flex-col">
+      <div class="p-6 border-b border-gray-700">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center">
+            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </div>
+          <div>
+            <h2 class="font-bold text-lg">Leona API</h2>
+            <p class="text-xs text-gray-400">Dashboard</p>
+          </div>
+        </div>
+      </div>
+      <nav class="flex-1 p-4 space-y-1">
+        <button onclick="showPage('instances')" id="nav-instances" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-dark-900 transition text-white bg-dark-900">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          Instancias
+        </button>
+        <button onclick="showPage('messages')" id="nav-messages" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-dark-900 transition text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Mensagens
+        </button>
+        <button onclick="showPage('groups')" id="nav-groups" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-dark-900 transition text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Grupos
+        </button>
+        <button onclick="showPage('admin')" id="nav-admin" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-dark-900 transition text-gray-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+          Admin
+        </button>
+      </nav>
+      <div class="p-4 border-t border-gray-700">
+        <button onclick="doLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left hover:bg-red-500/10 transition text-red-400">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sair
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="ml-64 min-h-screen">
+      <!-- TOP BAR -->
+      <div class="sticky top-0 z-40 bg-dark-900/80 backdrop-blur-xl border-b border-gray-700 px-8 py-4">
+        <div class="flex items-center justify-between">
+          <h1 id="pageTitle" class="text-xl font-semibold">Instancias</h1>
+          <div class="flex items-center gap-4">
+            <div id="statsBar" class="flex items-center gap-6 text-sm">
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-brand-500"></span> <span id="statConnected">0</span> online</span>
+              <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-red-500"></span> <span id="statDisconnected">0</span> offline</span>
+              <span class="text-gray-400"><span id="statTotal">0</span> total</span>
+            </div>
+            <button onclick="loadInstances()" class="p-2 hover:bg-dark-700 rounded-lg transition" title="Atualizar">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: INSTANCES -->
+      <div id="page-instances" class="page p-8 fade-in">
+        <div class="flex items-center justify-between mb-6">
+          <p class="text-gray-400">Gerencie suas instancias WhatsApp</p>
+          <button onclick="openModal('createModal')" class="bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-lg font-medium transition flex items-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Nova Instancia
+          </button>
+        </div>
+        <div id="instancesList" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div class="text-gray-500 text-center py-20 col-span-full">Carregando...</div>
+        </div>
+      </div>
+
+      <!-- PAGE: MESSAGES -->
+      <div id="page-messages" class="page p-8 fade-in hidden">
+        <p class="text-gray-400 mb-6">Envie mensagens por qualquer instancia conectada</p>
+        <div class="bg-dark-700 rounded-xl p-6 max-w-2xl">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Instancia</label>
+              <select id="msgInstance" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Tipo</label>
+              <select id="msgType" onchange="updateMsgFields()" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500">
+                <option value="text">Texto</option>
+                <option value="image">Imagem</option>
+                <option value="video">Video</option>
+                <option value="audio">Audio</option>
+                <option value="document">Documento</option>
+                <option value="location">Localizacao</option>
+                <option value="contact">Contato</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Telefone (com DDI)</label>
+              <input id="msgPhone" type="text" placeholder="5511999999999" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500">
+            </div>
+            <div id="msgFieldsContainer">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Mensagem</label>
+                <textarea id="msgText" rows="4" placeholder="Digite sua mensagem..." class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500 resize-none"></textarea>
+              </div>
+            </div>
+            <button onclick="sendMessage()" id="sendMsgBtn" class="bg-brand-500 hover:bg-brand-600 text-white px-6 py-3 rounded-lg font-medium transition w-full">
+              Enviar Mensagem
+            </button>
+            <div id="msgResult" class="hidden text-sm p-3 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: GROUPS -->
+      <div id="page-groups" class="page p-8 fade-in hidden">
+        <p class="text-gray-400 mb-6">Gerencie grupos das instancias conectadas</p>
+        <div class="bg-dark-700 rounded-xl p-6 max-w-2xl mb-6">
+          <label class="block text-sm font-medium text-gray-300 mb-1">Selecione a Instancia</label>
+          <select id="groupInstance" onchange="loadGroups()" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></select>
+        </div>
+        <div id="groupsList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="text-gray-500 text-center py-10 col-span-full">Selecione uma instancia para ver os grupos</div>
+        </div>
+      </div>
+
+      <!-- PAGE: ADMIN -->
+      <div id="page-admin" class="page p-8 fade-in hidden">
+        <p class="text-gray-400 mb-6">Estatisticas e gerenciamento de proxies</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="bg-dark-700 rounded-xl p-6">
+            <p class="text-gray-400 text-sm">Total Instancias</p>
+            <p id="adminTotal" class="text-3xl font-bold mt-1">0</p>
+          </div>
+          <div class="bg-dark-700 rounded-xl p-6">
+            <p class="text-gray-400 text-sm">Conectadas</p>
+            <p id="adminConnected" class="text-3xl font-bold mt-1 text-brand-500">0</p>
+          </div>
+          <div class="bg-dark-700 rounded-xl p-6">
+            <p class="text-gray-400 text-sm">Desconectadas</p>
+            <p id="adminDisconnected" class="text-3xl font-bold mt-1 text-red-400">0</p>
+          </div>
+        </div>
+        <h3 class="text-lg font-semibold mb-4">Proxies</h3>
+        <div id="proxiesList" class="bg-dark-700 rounded-xl overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-dark-900">
+              <tr><th class="text-left px-6 py-3 text-gray-400 font-medium">IP</th><th class="text-left px-6 py-3 text-gray-400 font-medium">Provider</th><th class="text-left px-6 py-3 text-gray-400 font-medium">Status</th><th class="text-left px-6 py-3 text-gray-400 font-medium">Health</th><th class="text-left px-6 py-3 text-gray-400 font-medium">Instancia</th></tr>
+            </thead>
+            <tbody id="proxiesBody"><tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE INSTANCE -->
+  <div id="createModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-dark-700 rounded-2xl p-6 w-full max-w-md fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold">Nova Instancia</h3>
+        <button onclick="closeModal('createModal')" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Nome</label>
+          <input id="newName" type="text" placeholder="meu-whatsapp" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Webhook URL (opcional)</label>
+          <input id="newWebhook" type="url" placeholder="https://..." class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500">
+        </div>
+        <button onclick="createInstance()" id="createBtn" class="w-full bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-lg font-medium transition">Criar Instancia</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: QR CODE -->
+  <div id="qrModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-dark-700 rounded-2xl p-6 w-full max-w-md fade-in text-center">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">QR Code</h3>
+        <button onclick="closeModal('qrModal');stopQRPolling()" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <p class="text-gray-400 text-sm mb-4">Escaneie o QR Code com seu WhatsApp</p>
+      <div id="qrContainer" class="flex items-center justify-center min-h-[280px]">
+        <div class="spinner border-brand-500"></div>
+      </div>
+      <p id="qrStatus" class="text-gray-400 text-sm mt-4">Aguardando QR Code...</p>
+    </div>
+  </div>
+
+  <!-- MODAL: SEND TEST -->
+  <div id="testModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-dark-700 rounded-2xl p-6 w-full max-w-md fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold">Enviar Teste</h3>
+        <button onclick="closeModal('testModal')" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="space-y-4">
+        <input id="testInstanceId" type="hidden">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
+          <input id="testPhone" type="text" placeholder="5511999999999" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Mensagem</label>
+          <textarea id="testText" rows="3" placeholder="Mensagem de teste..." class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500 resize-none"></textarea>
+        </div>
+        <button onclick="sendTest()" class="w-full bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-lg font-medium transition">Enviar</button>
+        <div id="testResult" class="hidden text-sm p-3 rounded-lg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: WEBHOOK CONFIG -->
+  <div id="webhookModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden flex items-center justify-center">
+    <div class="bg-dark-700 rounded-2xl p-6 w-full max-w-md fade-in">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-lg font-semibold">Configurar Webhook</h3>
+        <button onclick="closeModal('webhookModal')" class="text-gray-400 hover:text-white"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+      </div>
+      <div class="space-y-4">
+        <input id="webhookInstanceId" type="hidden">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Webhook URL</label>
+          <input id="webhookUrl" type="url" placeholder="https://seu-webhook.com/endpoint" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500">
+        </div>
+        <button onclick="saveWebhook()" class="w-full bg-brand-500 hover:bg-brand-600 text-white py-3 rounded-lg font-medium transition">Salvar</button>
+        <div id="webhookResult" class="hidden text-sm p-3 rounded-lg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="fixed bottom-6 right-6 z-[70] hidden">
+    <div class="bg-dark-700 border border-gray-600 rounded-xl px-5 py-3 shadow-2xl flex items-center gap-3 fade-in">
+      <span id="toastIcon"></span>
+      <span id="toastMsg" class="text-sm"></span>
+    </div>
+  </div>
+
+<script>
+// ============ STATE ============
+let API_KEY = '';
+let BASE_URL = '';
+let instances = [];
+let qrInterval = null;
+
+// ============ INIT ============
+function init() {
+  const saved = localStorage.getItem('leona_api_key');
+  BASE_URL = window.location.origin;
+  if (saved) {
+    API_KEY = saved;
+    checkAuth();
+  }
+}
+
+async function checkAuth() {
+  try {
+    const r = await api('GET', '/health');
+    if (r) { showDashboard(); }
+  } catch { /* stay on login */ }
+}
+
+// ============ AUTH ============
+async function doLogin() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) return;
+  API_KEY = key;
+  try {
+    const r = await api('GET', '/api/admin/stats');
+    localStorage.setItem('leona_api_key', key);
+    showDashboard();
+  } catch {
+    document.getElementById('loginError').classList.remove('hidden');
+    setTimeout(() => document.getElementById('loginError').classList.add('hidden'), 3000);
+  }
+}
+
+function doLogout() {
+  localStorage.removeItem('leona_api_key');
+  API_KEY = '';
+  document.getElementById('dashboard').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+}
+
+function showDashboard() {
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('dashboard').classList.remove('hidden');
+  loadInstances();
+  loadStats();
+}
+
+// ============ API HELPER ============
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Authorization': 'Bearer ' + API_KEY, 'Content-Type': 'application/json' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(BASE_URL + path, opts);
+  if (r.status === 401) { doLogout(); throw new Error('Unauthorized'); }
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || 'Erro desconhecido');
+  return data;
+}
+
+// ============ INSTANCES ============
+async function loadInstances() {
+  try {
+    const data = await api('GET', '/api/instance/list');
+    instances = data.instances || [];
+    renderInstances();
+    updateSelects();
+    loadStats();
+  } catch (e) {
+    document.getElementById('instancesList').innerHTML = `<div class="text-red-400 text-center py-10 col-span-full">Erro: ${e.message}</div>`;
+  }
+}
+
+function renderInstances() {
+  const container = document.getElementById('instancesList');
+  if (!instances.length) {
+    container.innerHTML = `
+      <div class="col-span-full text-center py-20">
+        <svg class="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+        <p class="text-gray-500 text-lg">Nenhuma instancia</p>
+        <p class="text-gray-600 text-sm mt-1">Clique em "Nova Instancia" para comecar</p>
+      </div>`;
+    return;
+  }
+  container.innerHTML = instances.map(inst => {
+    const connected = inst.status === 'connected';
+    const statusColor = connected ? 'bg-brand-500' : 'bg-red-500';
+    const statusText = connected ? 'Conectado' : (inst.status || 'Desconectado');
+    return `
+    <div class="bg-dark-700 rounded-xl p-5 border border-gray-700 hover:border-gray-600 transition fade-in">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-dark-900 rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-brand-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          </div>
+          <div>
+            <h3 class="font-semibold">${inst.name || inst.id}</h3>
+            <p class="text-xs text-gray-400">${inst.id.substring(0,8)}...</p>
+          </div>
+        </div>
+        <span class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ${connected ? 'bg-brand-500/10 text-brand-400' : 'bg-red-500/10 text-red-400'}">
+          <span class="w-1.5 h-1.5 rounded-full ${statusColor} ${connected ? 'pulse-dot' : ''}"></span>
+          ${statusText}
+        </span>
+      </div>
+      ${inst.phone ? `<p class="text-sm text-gray-400 mb-3">Tel: ${inst.phone}</p>` : ''}
+      <div class="flex flex-wrap gap-2 mt-3">
+        ${!connected ? `
+          <button onclick="connectInstance('${inst.id}')" class="text-xs bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 px-3 py-1.5 rounded-lg transition">Conectar</button>
+          <button onclick="showQR('${inst.id}')" class="text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition">QR Code</button>
+        ` : `
+          <button onclick="openTestModal('${inst.id}')" class="text-xs bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 px-3 py-1.5 rounded-lg transition">Testar</button>
+          <button onclick="disconnectInstance('${inst.id}')" class="text-xs bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 px-3 py-1.5 rounded-lg transition">Desconectar</button>
+        `}
+        <button onclick="openWebhookModal('${inst.id}', '${inst.webhook_url || ''}')" class="text-xs bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 px-3 py-1.5 rounded-lg transition">Webhook</button>
+        <button onclick="restartInstance('${inst.id}')" class="text-xs bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 px-3 py-1.5 rounded-lg transition">Reiniciar</button>
+        <button onclick="deleteInstance('${inst.id}')" class="text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition">Excluir</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function createInstance() {
+  const name = document.getElementById('newName').value.trim();
+  if (!name) return toast('Preencha o nome', 'error');
+  const webhook = document.getElementById('newWebhook').value.trim();
+  const btn = document.getElementById('createBtn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await api('POST', '/api/instance/create', { name, webhook_url: webhook || undefined });
+    closeModal('createModal');
+    document.getElementById('newName').value = '';
+    document.getElementById('newWebhook').value = '';
+    toast('Instancia criada!', 'success');
+    loadInstances();
+  } catch (e) { toast(e.message, 'error'); }
+  btn.textContent = 'Criar Instancia';
+}
+
+async function connectInstance(id) {
+  try {
+    const data = await api('POST', `/api/instance/${id}/connect`);
+    toast('Conectando...', 'success');
+    if (data.qr_code) { showQRImage(data.qr_code); openModal('qrModal'); }
+    else { showQR(id); }
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function disconnectInstance(id) {
+  try {
+    await api('POST', `/api/instance/${id}/disconnect`);
+    toast('Desconectado', 'success');
+    loadInstances();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function deleteInstance(id) {
+  if (!confirm('Tem certeza que deseja excluir esta instancia?')) return;
+  try {
+    await api('DELETE', `/api/instance/${id}`);
+    toast('Instancia excluida', 'success');
+    loadInstances();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function restartInstance(id) {
+  try {
+    await api('POST', `/api/instance/${id}/restart`);
+    toast('Instancia reiniciada', 'success');
+    loadInstances();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ============ QR CODE ============
+async function showQR(id) {
+  openModal('qrModal');
+  document.getElementById('qrContainer').innerHTML = '<div class="spinner border-brand-500"></div>';
+  document.getElementById('qrStatus').textContent = 'Aguardando QR Code...';
+  stopQRPolling();
+  await fetchQR(id);
+  qrInterval = setInterval(() => fetchQR(id), 5000);
+}
+
+async function fetchQR(id) {
+  try {
+    const data = await api('GET', `/api/instance/${id}/qrcode`);
+    if (data.qr_code) {
+      showQRImage(data.qr_code);
+      document.getElementById('qrStatus').textContent = 'Escaneie com seu WhatsApp';
+    } else {
+      // Check if connected
+      const info = await api('GET', `/api/instance/${id}/info`);
+      if (info.connected) {
+        stopQRPolling();
+        document.getElementById('qrContainer').innerHTML = '<div class="text-brand-500"><svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>';
+        document.getElementById('qrStatus').textContent = 'Conectado com sucesso!';
+        setTimeout(() => { closeModal('qrModal'); loadInstances(); }, 2000);
+      }
+    }
+  } catch (e) {
+    document.getElementById('qrStatus').textContent = 'Conecte primeiro a instancia';
+  }
+}
+
+function showQRImage(qrData) {
+  const container = document.getElementById('qrContainer');
+  container.innerHTML = '<canvas id="qrCanvas"></canvas>';
+  QRCode.toCanvas(document.getElementById('qrCanvas'), qrData, {
+    width: 280, margin: 2,
+    color: { dark: '#000000', light: '#ffffff' }
+  });
+}
+
+function stopQRPolling() { if (qrInterval) { clearInterval(qrInterval); qrInterval = null; } }
+
+// ============ MESSAGES ============
+function updateMsgFields() {
+  const type = document.getElementById('msgType').value;
+  const container = document.getElementById('msgFieldsContainer');
+  const fields = {
+    text: `<div><label class="block text-sm font-medium text-gray-300 mb-1">Mensagem</label><textarea id="msgText" rows="4" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500 resize-none"></textarea></div>`,
+    image: `<div><label class="block text-sm font-medium text-gray-300 mb-1">URL da Imagem</label><input id="msgUrl" type="url" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div><div><label class="block text-sm font-medium text-gray-300 mb-1">Legenda</label><input id="msgCaption" type="text" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div>`,
+    video: `<div><label class="block text-sm font-medium text-gray-300 mb-1">URL do Video</label><input id="msgUrl" type="url" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div><div><label class="block text-sm font-medium text-gray-300 mb-1">Legenda</label><input id="msgCaption" type="text" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div>`,
+    audio: `<div><label class="block text-sm font-medium text-gray-300 mb-1">URL do Audio</label><input id="msgUrl" type="url" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div>`,
+    document: `<div><label class="block text-sm font-medium text-gray-300 mb-1">URL do Documento</label><input id="msgUrl" type="url" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div><div><label class="block text-sm font-medium text-gray-300 mb-1">Nome do Arquivo</label><input id="msgFilename" type="text" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div>`,
+    location: `<div class="grid grid-cols-2 gap-4"><div><label class="block text-sm font-medium text-gray-300 mb-1">Latitude</label><input id="msgLat" type="number" step="any" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div><div><label class="block text-sm font-medium text-gray-300 mb-1">Longitude</label><input id="msgLng" type="number" step="any" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div></div><div><label class="block text-sm font-medium text-gray-300 mb-1">Nome do Local</label><input id="msgLocName" type="text" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div>`,
+    contact: `<div><label class="block text-sm font-medium text-gray-300 mb-1">Nome do Contato</label><input id="msgContactName" type="text" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div><div><label class="block text-sm font-medium text-gray-300 mb-1">Telefone do Contato</label><input id="msgContactPhone" type="text" class="w-full bg-dark-900 border border-gray-600 rounded-lg px-4 py-3 text-white outline-none focus:border-brand-500"></div>`
+  };
+  container.innerHTML = fields[type] || fields.text;
+}
+
+async function sendMessage() {
+  const instanceId = document.getElementById('msgInstance').value;
+  const type = document.getElementById('msgType').value;
+  const phone = document.getElementById('msgPhone').value.trim();
+  if (!instanceId || !phone) return toast('Preencha instancia e telefone', 'error');
+
+  let body = { phone };
+  const result = document.getElementById('msgResult');
+
+  switch (type) {
+    case 'text': body.text = document.getElementById('msgText').value; break;
+    case 'image': body.url = document.getElementById('msgUrl').value; body.caption = document.getElementById('msgCaption')?.value; break;
+    case 'video': body.url = document.getElementById('msgUrl').value; body.caption = document.getElementById('msgCaption')?.value; break;
+    case 'audio': body.url = document.getElementById('msgUrl').value; break;
+    case 'document': body.url = document.getElementById('msgUrl').value; body.filename = document.getElementById('msgFilename')?.value; break;
+    case 'location': body.latitude = parseFloat(document.getElementById('msgLat').value); body.longitude = parseFloat(document.getElementById('msgLng').value); body.name = document.getElementById('msgLocName')?.value; break;
+    case 'contact': body.contact_name = document.getElementById('msgContactName').value; body.contact_phone = document.getElementById('msgContactPhone').value; break;
+  }
+
+  const btn = document.getElementById('sendMsgBtn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const data = await api('POST', `/api/instance/${instanceId}/send/${type}`, body);
+    result.className = 'text-sm p-3 rounded-lg bg-brand-500/10 text-brand-400';
+    result.textContent = `Enviado! ID: ${data.message_id || 'ok'}`;
+    result.classList.remove('hidden');
+  } catch (e) {
+    result.className = 'text-sm p-3 rounded-lg bg-red-500/10 text-red-400';
+    result.textContent = `Erro: ${e.message}`;
+    result.classList.remove('hidden');
+  }
+  btn.textContent = 'Enviar Mensagem';
+}
+
+// ============ TEST MODAL ============
+function openTestModal(id) {
+  document.getElementById('testInstanceId').value = id;
+  document.getElementById('testResult').classList.add('hidden');
+  openModal('testModal');
+}
+
+async function sendTest() {
+  const id = document.getElementById('testInstanceId').value;
+  const phone = document.getElementById('testPhone').value.trim();
+  const text = document.getElementById('testText').value.trim();
+  if (!phone || !text) return toast('Preencha todos os campos', 'error');
+  const result = document.getElementById('testResult');
+  try {
+    await api('POST', `/api/instance/${id}/send/text`, { phone, text });
+    result.className = 'text-sm p-3 rounded-lg bg-brand-500/10 text-brand-400';
+    result.textContent = 'Mensagem enviada com sucesso!';
+    result.classList.remove('hidden');
+  } catch (e) {
+    result.className = 'text-sm p-3 rounded-lg bg-red-500/10 text-red-400';
+    result.textContent = `Erro: ${e.message}`;
+    result.classList.remove('hidden');
+  }
+}
+
+// ============ WEBHOOK ============
+function openWebhookModal(id, url) {
+  document.getElementById('webhookInstanceId').value = id;
+  document.getElementById('webhookUrl').value = url;
+  document.getElementById('webhookResult').classList.add('hidden');
+  openModal('webhookModal');
+}
+
+async function saveWebhook() {
+  const id = document.getElementById('webhookInstanceId').value;
+  const url = document.getElementById('webhookUrl').value.trim();
+  const result = document.getElementById('webhookResult');
+  try {
+    await api('PUT', `/api/instance/${id}/webhook`, { webhook_url: url });
+    result.className = 'text-sm p-3 rounded-lg bg-brand-500/10 text-brand-400';
+    result.textContent = 'Webhook atualizado!';
+    result.classList.remove('hidden');
+    loadInstances();
+  } catch (e) {
+    result.className = 'text-sm p-3 rounded-lg bg-red-500/10 text-red-400';
+    result.textContent = `Erro: ${e.message}`;
+    result.classList.remove('hidden');
+  }
+}
+
+// ============ GROUPS ============
+async function loadGroups() {
+  const id = document.getElementById('groupInstance').value;
+  if (!id) return;
+  const container = document.getElementById('groupsList');
+  container.innerHTML = '<div class="text-gray-500 text-center py-10 col-span-full">Carregando...</div>';
+  try {
+    const data = await api('GET', `/api/instance/${id}/group/list`);
+    const groups = data.groups || [];
+    if (!groups.length) {
+      container.innerHTML = '<div class="text-gray-500 text-center py-10 col-span-full">Nenhum grupo encontrado</div>';
+      return;
+    }
+    container.innerHTML = groups.map(g => `
+      <div class="bg-dark-700 rounded-xl p-5 border border-gray-700">
+        <h4 class="font-semibold">${g.name || 'Sem nome'}</h4>
+        <p class="text-xs text-gray-400 mt-1">${g.jid}</p>
+        ${g.topic ? `<p class="text-sm text-gray-300 mt-2">${g.topic}</p>` : ''}
+        <div class="flex gap-2 mt-3">
+          <button onclick="leaveGroup('${id}','${g.jid}')" class="text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 px-3 py-1.5 rounded-lg transition">Sair</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    container.innerHTML = `<div class="text-red-400 text-center py-10 col-span-full">Erro: ${e.message}</div>`;
+  }
+}
+
+async function leaveGroup(instanceId, groupJid) {
+  if (!confirm('Sair deste grupo?')) return;
+  try {
+    await api('POST', `/api/instance/${instanceId}/group/${groupJid}/leave`);
+    toast('Saiu do grupo', 'success');
+    loadGroups();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ============ ADMIN ============
+async function loadStats() {
+  try {
+    const data = await api('GET', '/api/admin/stats');
+    document.getElementById('statTotal').textContent = data.total_instances || 0;
+    document.getElementById('statConnected').textContent = data.connected_instances || 0;
+    document.getElementById('statDisconnected').textContent = data.disconnected_instances || 0;
+    document.getElementById('adminTotal').textContent = data.total_instances || 0;
+    document.getElementById('adminConnected').textContent = data.connected_instances || 0;
+    document.getElementById('adminDisconnected').textContent = data.disconnected_instances || 0;
+  } catch {}
+}
+
+async function loadProxies() {
+  try {
+    const data = await api('GET', '/api/admin/proxies');
+    const proxies = data.proxies || [];
+    const body = document.getElementById('proxiesBody');
+    if (!proxies.length) {
+      body.innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Nenhum proxy configurado</td></tr>';
+      return;
+    }
+    body.innerHTML = proxies.map(p => {
+      const statusColor = p.Status === 'available' ? 'text-brand-400' : p.Status === 'assigned' ? 'text-blue-400' : 'text-red-400';
+      return `<tr class="border-t border-gray-700"><td class="px-6 py-3 font-mono text-sm">${p.IP || p.ip_address || '-'}</td><td class="px-6 py-3">${p.Provider || p.provider || '-'}</td><td class="px-6 py-3 ${statusColor}">${p.Status || p.status || '-'}</td><td class="px-6 py-3">${p.HealthScore || p.health_score || 0}%</td><td class="px-6 py-3 text-gray-400">${p.AssignedInstance || p.assigned_instance_id || '-'}</td></tr>`;
+    }).join('');
+  } catch {
+    document.getElementById('proxiesBody').innerHTML = '<tr><td colspan="5" class="px-6 py-8 text-center text-gray-500">Sem proxies</td></tr>';
+  }
+}
+
+// ============ NAVIGATION ============
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+  document.getElementById(`page-${page}`).classList.remove('hidden');
+  document.querySelectorAll('.nav-btn').forEach(b => { b.classList.remove('bg-dark-900', 'text-white'); b.classList.add('text-gray-400'); });
+  document.getElementById(`nav-${page}`).classList.add('bg-dark-900', 'text-white');
+  document.getElementById(`nav-${page}`).classList.remove('text-gray-400');
+  const titles = { instances: 'Instancias', messages: 'Mensagens', groups: 'Grupos', admin: 'Admin' };
+  document.getElementById('pageTitle').textContent = titles[page];
+  if (page === 'admin') { loadStats(); loadProxies(); }
+  if (page === 'groups' || page === 'messages') updateSelects();
+}
+
+function updateSelects() {
+  const connected = instances.filter(i => i.status === 'connected');
+  const all = instances;
+  ['msgInstance', 'groupInstance'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const list = id === 'groupInstance' ? connected : all;
+    el.innerHTML = '<option value="">Selecione...</option>' + list.map(i => `<option value="${i.id}">${i.name || i.id}</option>`).join('');
+  });
+}
+
+// ============ UTILS ============
+function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  const icon = type === 'success' ? '<svg class="w-5 h-5 text-brand-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' : '<svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>';
+  document.getElementById('toastIcon').innerHTML = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 3000);
+}
+
+// Enter key on login
+document.getElementById('apiKeyInput').addEventListener('keypress', e => { if (e.key === 'Enter') doLogin(); });
+
+// Auto-refresh instances every 30s
+setInterval(() => { if (API_KEY) loadInstances(); }, 30000);
+
+// Init
+init();
+</script>
+</body>
+</html>

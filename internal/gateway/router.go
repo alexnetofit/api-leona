@@ -33,6 +33,12 @@ func SetupRouter(
 	contactH := handlers.NewContactHandler(manager)
 	adminH := handlers.NewAdminHandler(manager, proxyManager)
 
+	// Dashboard (no auth)
+	app.Static("/dashboard", "./web")
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Redirect("/dashboard")
+	})
+
 	// Health (no auth)
 	app.Get("/health", adminH.Health)
 
