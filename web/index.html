@@ -443,20 +443,29 @@ async function createInstance() {
 }
 
 async function connectInstance(id) {
+  // Open modal first with loading state
+  openModal('qrModal');
+  document.getElementById('qrContainer').innerHTML = '<div class="spinner border-brand-500"></div>';
+  document.getElementById('qrStatus').textContent = 'Conectando ao WhatsApp...';
+  stopQRPolling();
+
   try {
     const data = await api('POST', `/api/instance/${id}/connect`);
-    toast('Conectando... aguarde o QR Code', 'success');
-    openModal('qrModal');
-    document.getElementById('qrContainer').innerHTML = '<div class="spinner border-brand-500"></div>';
-    document.getElementById('qrStatus').textContent = 'Gerando QR Code... aguarde';
+    console.log('Connect response:', JSON.stringify(data));
     if (data.qr_code) {
+      console.log('QR code received, length:', data.qr_code.length);
       showQRImage(data.qr_code);
       document.getElementById('qrStatus').textContent = 'Escaneie com seu WhatsApp';
+    } else {
+      document.getElementById('qrStatus').textContent = 'Aguardando QR Code...';
     }
-    // Start polling for QR regardless
-    stopQRPolling();
-    qrInterval = setInterval(() => fetchQR(id), 3000);
-  } catch (e) { toast(e.message, 'error'); }
+  } catch (e) {
+    console.error('Connect error:', e);
+    document.getElementById('qrStatus').textContent = 'Erro: ' + e.message + ' - Tentando buscar QR...';
+  }
+
+  // Start polling for QR regardless of connect result
+  qrInterval = setInterval(() => fetchQR(id), 3000);
 }
 
 async function disconnectInstance(id) {
@@ -527,11 +536,26 @@ async function fetchQR(id) {
 
 function showQRImage(qrData) {
   const container = document.getElementById('qrContainer');
-  container.innerHTML = '<canvas id="qrCanvas"></canvas>';
-  QRCode.toCanvas(document.getElementById('qrCanvas'), qrData, {
-    width: 280, margin: 2,
-    color: { dark: '#000000', light: '#ffffff' }
-  });
+  console.log('showQRImage called with data length:', qrData ? qrData.length : 0);
+  try {
+    // Use toDataURL to create an image (more reliable than canvas)
+    QRCode.toDataURL(qrData, {
+      width: 280, margin: 2,
+      color: { dark: '#000000', light: '#ffffff' }
+    }, function(err, url) {
+      if (err) {
+        console.error('QR render error:', err);
+        // Fallback: show raw QR string for manual scanning
+        container.innerHTML = '<div class="bg-white p-4 rounded-lg text-black text-xs break-all max-h-60 overflow-auto">' + qrData + '</div>';
+        return;
+      }
+      console.log('QR image generated successfully');
+      container.innerHTML = '<img src="' + url + '" alt="QR Code" class="mx-auto rounded-lg" style="width:280px;height:280px">';
+    });
+  } catch(e) {
+    console.error('QR library error:', e);
+    container.innerHTML = '<div class="text-red-400 text-sm">Erro ao gerar QR. Dados: <br><span class="text-xs break-all">' + qrData.substring(0,100) + '...</span></div>';
+  }
 }
 
 function stopQRPolling() { if (qrInterval) { clearInterval(qrInterval); qrInterval = null; } }
