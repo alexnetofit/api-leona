@@ -412,8 +412,7 @@ function renderInstances() {
       ${inst.phone ? `<p class="text-sm text-gray-400 mb-3">Tel: ${inst.phone}</p>` : ''}
       <div class="flex flex-wrap gap-2 mt-3">
         ${!connected ? `
-          <button onclick="connectInstance('${inst.id}')" class="text-xs bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 px-3 py-1.5 rounded-lg transition">Conectar</button>
-          <button onclick="showQR('${inst.id}')" class="text-xs bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition">QR Code</button>
+          <button onclick="connectInstance('${inst.id}')" class="text-xs bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 px-3 py-1.5 rounded-lg transition">Conectar / QR Code</button>
         ` : `
           <button onclick="openTestModal('${inst.id}')" class="text-xs bg-brand-500/10 text-brand-400 hover:bg-brand-500/20 px-3 py-1.5 rounded-lg transition">Testar</button>
           <button onclick="disconnectInstance('${inst.id}')" class="text-xs bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 px-3 py-1.5 rounded-lg transition">Desconectar</button>

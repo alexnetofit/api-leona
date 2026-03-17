@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -104,16 +105,30 @@ func (h *InstanceHandler) Connect(c *fiber.Ctx) error {
 	id := c.Params("id")
 	client, exists := h.manager.GetInstance(id)
 	if !exists {
-		return c.Status(404).JSON(fiber.Map{"error": "instance not found"})
+		return c.Status(404).JSON(fiber.Map{"error": "instance not found in manager"})
 	}
 
+	log.Printf("[InstanceHandler] connecting instance %s", id)
+
 	if err := client.Connect(); err != nil {
+		log.Printf("[InstanceHandler] connect error for %s: %v", id, err)
 		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("failed to connect: %v", err)})
 	}
 
 	_ = h.db.UpdateInstanceStatus(id, "connecting")
 
-	qr := client.GetQR()
+	// Wait a bit for QR code to be generated (it comes async via channel)
+	qr := ""
+	for i := 0; i < 10; i++ {
+		qr = client.GetQR()
+		if qr != "" {
+			break
+		}
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	log.Printf("[InstanceHandler] instance %s connect result: qr=%v", id, qr != "")
+
 	resp := fiber.Map{"status": "connecting"}
 	if qr != "" {
 		resp["qr_code"] = qr
