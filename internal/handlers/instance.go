@@ -168,13 +168,17 @@ func (h *InstanceHandler) Logout(c *fiber.Ctx) error {
 func (h *InstanceHandler) Delete(c *fiber.Ctx) error {
 	id := c.Params("id")
 
+	// Try to delete from manager (may not exist if container restarted)
 	if err := h.manager.DeleteInstance(id); err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("failed to delete: %v", err)})
+		log.Printf("[InstanceHandler] manager delete warning for %s: %v (continuing with DB delete)", id, err)
 	}
 
 	_ = h.proxyManager.ReleaseProxy(id)
 	_ = h.db.ReleaseProxy(id)
-	_ = h.db.DeleteInstance(id)
+
+	if err := h.db.DeleteInstance(id); err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("failed to delete from database: %v", err)})
+	}
 
 	return c.JSON(fiber.Map{"status": "deleted"})
 }
