@@ -60,34 +60,55 @@ func main() {
 	healthChecker.Start(60 * time.Second)
 	defer healthChecker.Stop()
 
-	// Restore existing sessions
+	// Restore existing sessions from SQLite files
 	restored := manager.RestoreAll()
 	if len(restored) > 0 {
-		log.Printf("[LeonaAPI] restored %d instances", len(restored))
+		log.Printf("[LeonaAPI] restored %d instances from session files", len(restored))
+	}
 
-		// Reconnect restored instances
-		for _, id := range restored {
-			client, exists := manager.GetInstance(id)
-			if !exists {
-				continue
-			}
-			// Get proxy from DB
-			instance, err := db.GetInstance(id)
-			if err == nil && instance != nil && instance.ProxyIP != "" {
-				proxyURL := proxyManager.GetProxyURLByIP(instance.ProxyIP, instance.ProxyProvider)
-				if proxyURL != "" {
-					client.SetProxy(proxyURL)
+	// Also restore instances from DB that aren't in manager yet
+	dbInstances, err := db.ListInstances()
+	if err == nil {
+		for _, inst := range dbInstances {
+			if _, exists := manager.GetInstance(inst.ID); !exists {
+				log.Printf("[LeonaAPI] restoring instance %s (%s) from database", inst.ID, inst.Name)
+				_, err := manager.CreateInstance(inst.ID, inst.Name, inst.WebhookURL, "")
+				if err != nil {
+					log.Printf("[LeonaAPI] failed to restore %s: %v", inst.ID, err)
+					continue
 				}
+				restored = append(restored, inst.ID)
 			}
-			go func(c *whatsapp.Client, instanceID string) {
-				if err := c.Connect(); err != nil {
-					log.Printf("[LeonaAPI] failed to reconnect %s: %v", instanceID, err)
-				} else {
-					log.Printf("[LeonaAPI] reconnected %s", instanceID)
-				}
-			}(client, id)
 		}
 	}
+
+	// Reconnect all restored instances
+	for _, id := range restored {
+		client, exists := manager.GetInstance(id)
+		if !exists {
+			continue
+		}
+		// Get proxy from DB
+		instance, err := db.GetInstance(id)
+		if err == nil && instance != nil && instance.ProxyIP != "" {
+			proxyURL := proxyManager.GetProxyURLByIP(instance.ProxyIP, instance.ProxyProvider)
+			if proxyURL != "" {
+				client.SetProxy(proxyURL)
+			}
+		}
+		// Set webhook from DB
+		if err == nil && instance != nil && instance.WebhookURL != "" {
+			client.WebhookURL = instance.WebhookURL
+		}
+		go func(c *whatsapp.Client, instanceID string) {
+			if err := c.Connect(); err != nil {
+				log.Printf("[LeonaAPI] failed to reconnect %s: %v", instanceID, err)
+			} else {
+				log.Printf("[LeonaAPI] reconnected %s", instanceID)
+			}
+		}(client, id)
+	}
+	log.Printf("[LeonaAPI] total instances restored: %d", len(restored))
 
 	// Setup HTTP router
 	app := gateway.SetupRouter(cfg, manager, db, proxyManager)
