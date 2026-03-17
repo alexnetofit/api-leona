@@ -15,6 +15,7 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/proto/waCommon"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	"go.mau.fi/whatsmeow/types"
@@ -67,12 +68,12 @@ func (m *Manager) CreateInstance(id, name, webhookURL, proxyAddr string) (*Clien
 	}
 
 	dbPath := filepath.Join(m.storagePath, id+".db")
-	container, err := sqlstore.New("sqlite3", "file:"+dbPath+"?_foreign_keys=on", nil)
+	container, err := sqlstore.New(context.Background(), "sqlite3", "file:"+dbPath+"?_foreign_keys=on", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create database: %w", err)
 	}
 
-	deviceStore, err := container.GetFirstDevice()
+	deviceStore, err := container.GetFirstDevice(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get device store: %w", err)
 	}
@@ -221,7 +222,7 @@ func (c *Client) Disconnect() {
 }
 
 func (c *Client) Logout() error {
-	err := c.client.Logout()
+	err := c.client.Logout(context.Background())
 	c.Disconnect()
 	return err
 }
@@ -548,7 +549,7 @@ func (c *Client) SendReaction(phone, messageID, emoji string) error {
 
 	msg := &waE2E.Message{
 		ReactionMessage: &waE2E.ReactionMessage{
-			Key: &waE2E.MessageKey{
+			Key: &waCommon.MessageKey{
 				RemoteJID: proto.String(jid.String()),
 				FromMe:    proto.Bool(true),
 				ID:        proto.String(messageID),
@@ -592,7 +593,7 @@ func (c *Client) SendPoll(phone, question string, options []string, maxSelection
 
 func (c *Client) CheckRegistered(phone string) (bool, error) {
 	jid := parseJID(phone)
-	resp, err := c.client.IsOnWhatsApp([]string{"+" + jid.User})
+	resp, err := c.client.IsOnWhatsApp(context.Background(), []string{"+" + jid.User})
 	if err != nil {
 		return false, fmt.Errorf("failed to check registration: %w", err)
 	}
@@ -606,7 +607,7 @@ func (c *Client) CheckRegistered(phone string) (bool, error) {
 
 func (c *Client) GetProfilePicture(phone string) (string, error) {
 	jid := parseJID(phone)
-	pic, err := c.client.GetProfilePictureInfo(jid, &whatsmeow.GetProfilePictureParams{})
+	pic, err := c.client.GetProfilePictureInfo(context.Background(), jid, &whatsmeow.GetProfilePictureParams{})
 	if err != nil {
 		return "", fmt.Errorf("failed to get profile picture: %w", err)
 	}
@@ -627,7 +628,7 @@ func (c *Client) CreateGroup(name string, participants []string) (string, error)
 		Participants: jids,
 	}
 
-	info, err := c.client.CreateGroup(req)
+	info, err := c.client.CreateGroup(context.Background(), req)
 	if err != nil {
 		return "", fmt.Errorf("failed to create group: %w", err)
 	}
@@ -636,7 +637,7 @@ func (c *Client) CreateGroup(name string, participants []string) (string, error)
 
 func (c *Client) GetGroupInfo(groupJID string) (*types.GroupInfo, error) {
 	jid := parseGroupJID(groupJID)
-	info, err := c.client.GetGroupInfo(jid)
+	info, err := c.client.GetGroupInfo(context.Background(), jid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group info: %w", err)
 	}
@@ -644,7 +645,7 @@ func (c *Client) GetGroupInfo(groupJID string) (*types.GroupInfo, error) {
 }
 
 func (c *Client) GetJoinedGroups() ([]*types.GroupInfo, error) {
-	groups, err := c.client.GetJoinedGroups()
+	groups, err := c.client.GetJoinedGroups(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joined groups: %w", err)
 	}
@@ -658,7 +659,7 @@ func (c *Client) AddGroupParticipants(groupJID string, participants []string) er
 		jids = append(jids, parseJID(p))
 	}
 
-	_, err := c.client.UpdateGroupParticipants(jid, jids, whatsmeow.ParticipantChangeAdd)
+	_, err := c.client.UpdateGroupParticipants(context.Background(), jid, jids, whatsmeow.ParticipantChangeAdd)
 	if err != nil {
 		return fmt.Errorf("failed to add participants: %w", err)
 	}
@@ -672,7 +673,7 @@ func (c *Client) RemoveGroupParticipants(groupJID string, participants []string)
 		jids = append(jids, parseJID(p))
 	}
 
-	_, err := c.client.UpdateGroupParticipants(jid, jids, whatsmeow.ParticipantChangeRemove)
+	_, err := c.client.UpdateGroupParticipants(context.Background(), jid, jids, whatsmeow.ParticipantChangeRemove)
 	if err != nil {
 		return fmt.Errorf("failed to remove participants: %w", err)
 	}
@@ -681,12 +682,12 @@ func (c *Client) RemoveGroupParticipants(groupJID string, participants []string)
 
 func (c *Client) LeaveGroup(groupJID string) error {
 	jid := parseGroupJID(groupJID)
-	return c.client.LeaveGroup(jid)
+	return c.client.LeaveGroup(context.Background(), jid)
 }
 
 func (c *Client) GetGroupInviteLink(groupJID string) (string, error) {
 	jid := parseGroupJID(groupJID)
-	link, err := c.client.GetGroupInviteLink(jid, false)
+	link, err := c.client.GetGroupInviteLink(context.Background(), jid, false)
 	if err != nil {
 		return "", fmt.Errorf("failed to get invite link: %w", err)
 	}
