@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leona API - Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -538,20 +538,22 @@ function showQRImage(qrData) {
   const container = document.getElementById('qrContainer');
   console.log('showQRImage called with data length:', qrData ? qrData.length : 0);
   try {
-    // Use toDataURL to create an image (more reliable than canvas)
-    QRCode.toDataURL(qrData, {
-      width: 280, margin: 2,
-      color: { dark: '#000000', light: '#ffffff' }
-    }, function(err, url) {
-      if (err) {
-        console.error('QR render error:', err);
-        // Fallback: show raw QR string for manual scanning
-        container.innerHTML = '<div class="bg-white p-4 rounded-lg text-black text-xs break-all max-h-60 overflow-auto">' + qrData + '</div>';
-        return;
-      }
-      console.log('QR image generated successfully');
-      container.innerHTML = '<img src="' + url + '" alt="QR Code" class="mx-auto rounded-lg" style="width:280px;height:280px">';
+    container.innerHTML = '';
+    const qrDiv = document.createElement('div');
+    qrDiv.style.display = 'inline-block';
+    qrDiv.style.background = '#ffffff';
+    qrDiv.style.padding = '12px';
+    qrDiv.style.borderRadius = '12px';
+    container.appendChild(qrDiv);
+    new QRCode(qrDiv, {
+      text: qrData,
+      width: 260,
+      height: 260,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
     });
+    console.log('QR image generated successfully');
   } catch(e) {
     console.error('QR library error:', e);
     container.innerHTML = '<div class="text-red-400 text-sm">Erro ao gerar QR. Dados: <br><span class="text-xs break-all">' + qrData.substring(0,100) + '...</span></div>';
