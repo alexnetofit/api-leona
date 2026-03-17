@@ -509,6 +509,19 @@ async function showQR(id) {
 
 async function fetchQR(id) {
   try {
+    // Always check connection status first
+    try {
+      const info = await api('GET', `/api/instance/${id}/info`);
+      if (info.connected) {
+        stopQRPolling();
+        document.getElementById('qrContainer').innerHTML = '<div class="text-brand-500"><svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>';
+        document.getElementById('qrStatus').textContent = 'Conectado com sucesso! ✅';
+        setTimeout(() => { closeModal('qrModal'); loadInstances(); }, 2000);
+        return;
+      }
+    } catch {}
+
+    // If not connected, try to get QR code
     const r = await fetch(BASE_URL + `/api/instance/${id}/qrcode`, {
       headers: { 'Authorization': 'Bearer ' + API_KEY }
     });
@@ -519,19 +532,7 @@ async function fetchQR(id) {
         document.getElementById('qrStatus').textContent = 'Escaneie com seu WhatsApp';
       }
     } else {
-      // QR not ready yet - check if maybe already connected
-      try {
-        const info = await api('GET', `/api/instance/${id}/info`);
-        if (info.connected) {
-          stopQRPolling();
-          document.getElementById('qrContainer').innerHTML = '<div class="text-brand-500"><svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg></div>';
-          document.getElementById('qrStatus').textContent = 'Conectado com sucesso!';
-          setTimeout(() => { closeModal('qrModal'); loadInstances(); }, 2000);
-          return;
-        }
-      } catch {}
-      // Still waiting for QR
-      document.getElementById('qrStatus').textContent = 'Gerando QR Code... aguarde';
+      document.getElementById('qrStatus').textContent = 'Sincronizando... aguarde';
     }
   } catch (e) {
     document.getElementById('qrStatus').textContent = 'Aguardando QR Code...';

@@ -49,6 +49,8 @@ func (eb *EventBridge) HandleEvent(instanceID string, evt interface{}) {
 			webhookEvt = eb.handleReceipt(instanceID, receipt, eventType)
 		}
 	case "connection.connected":
+		log.Printf("[EventBridge] instance %s connected!", instanceID)
+		_ = eb.db.UpdateInstanceStatus(instanceID, "connected")
 		webhookEvt = &WebhookEvent{
 			Event:      "connection.connected",
 			InstanceID: instanceID,
@@ -56,6 +58,8 @@ func (eb *EventBridge) HandleEvent(instanceID string, evt interface{}) {
 			Data:       map[string]interface{}{},
 		}
 	case "connection.disconnected":
+		log.Printf("[EventBridge] instance %s disconnected", instanceID)
+		_ = eb.db.UpdateInstanceStatus(instanceID, "disconnected")
 		webhookEvt = &WebhookEvent{
 			Event:      "connection.disconnected",
 			InstanceID: instanceID,
@@ -63,6 +67,8 @@ func (eb *EventBridge) HandleEvent(instanceID string, evt interface{}) {
 			Data:       map[string]interface{}{},
 		}
 	case "connection.logged_out":
+		log.Printf("[EventBridge] instance %s logged out", instanceID)
+		_ = eb.db.UpdateInstanceStatus(instanceID, "logged_out")
 		webhookEvt = &WebhookEvent{
 			Event:      "connection.logged_out",
 			InstanceID: instanceID,
