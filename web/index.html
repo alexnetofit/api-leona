@@ -582,7 +582,7 @@ async function sendMessage() {
   const btn = document.getElementById('sendMsgBtn');
   btn.innerHTML = '<span class="spinner"></span>';
   try {
-    const data = await api('POST', `/api/instance/${instanceId}/send/${type}`, body);
+    const data = await api('POST', `/api/${instanceId}/send/${type}`, body);
     result.className = 'text-sm p-3 rounded-lg bg-brand-500/10 text-brand-400';
     result.textContent = `Enviado! ID: ${data.message_id || 'ok'}`;
     result.classList.remove('hidden');
@@ -608,7 +608,7 @@ async function sendTest() {
   if (!phone || !text) return toast('Preencha todos os campos', 'error');
   const result = document.getElementById('testResult');
   try {
-    await api('POST', `/api/instance/${id}/send/text`, { phone, text });
+    await api('POST', `/api/${id}/send/text`, { phone, text });
     result.className = 'text-sm p-3 rounded-lg bg-brand-500/10 text-brand-400';
     result.textContent = 'Mensagem enviada com sucesso!';
     result.classList.remove('hidden');
@@ -651,7 +651,7 @@ async function loadGroups() {
   const container = document.getElementById('groupsList');
   container.innerHTML = '<div class="text-gray-500 text-center py-10 col-span-full">Carregando...</div>';
   try {
-    const data = await api('GET', `/api/instance/${id}/group/list`);
+    const data = await api('GET', `/api/${id}/group/list`);
     const groups = data.groups || [];
     if (!groups.length) {
       container.innerHTML = '<div class="text-gray-500 text-center py-10 col-span-full">Nenhum grupo encontrado</div>';
@@ -675,7 +675,7 @@ async function loadGroups() {
 async function leaveGroup(instanceId, groupJid) {
   if (!confirm('Sair deste grupo?')) return;
   try {
-    await api('POST', `/api/instance/${instanceId}/group/${groupJid}/leave`);
+    await api('POST', `/api/${instanceId}/group/${groupJid}/leave`);
     toast('Saiu do grupo', 'success');
     loadGroups();
   } catch (e) { toast(e.message, 'error'); }
